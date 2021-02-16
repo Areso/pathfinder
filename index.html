@@ -112,7 +112,113 @@
 				};
 			}
 	var finder = {
-		work: 0.
+		work: 0,
+		checkNewMap : function () {
+			//WIP
+			nonAccessible         = false;
+			//castle entrance 10
+			visitableElements     = [10];
+			ci = 0;
+			pointsToCheck         = [];
+			for (i=0; i<config.sizeMapX; i++){
+				for (j=0; j<config.sizeMapX; j++){
+					ci = ci + 1; //ci is common iterator for objects
+					//first we check whether myMapObjects has something
+					//then add AND condition
+					//that myMapObjects is NOT in the list of nonVisitableElements
+					if (inArray(visitableElements, game.myMapObjects[i][j])) {
+						console.log("the element code is "+game.myMapObjects[i][j]+" in this loc "+i+"; "+j);
+						pointsToCheck.push({"coord":[i,j]});
+					}
+				}
+			}
+			console.log(pointsToCheck);
+			pfmap   = game.prepareMap();
+			wavemap = game.genWaveMap(pfmap, pointsToCheck);
+			//track   = game.genTrack();
+			return true;
+		},
+		genWaveMap : function (map, POIs) {
+			neighbor_offsets = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+			waveMap          = [];
+			for (i=0;i<config.sizeMapX;i++) {
+				waveMap.push([]);
+			}
+			for (i = 0; i < config.sizeMapX; i++) {
+				for (j = 0; j < config.sizeMapY; j++) {
+					waveMap[i][j]=0;
+				}
+			}
+			waveMap[game.heroX][game.heroY]  =  1;
+			node_list = [];
+			node_list.push([[game.heroX],[game.heroY]])
+			target = [];
+			target[0] = game.blackmarketLoc[0]
+			target[1] = game.blackmarketLoc[1]
+			console.log("node list");
+			console.log(node_list+"lenght of the node_list is "+node_list.length);
+			for (node of node_list){
+				//console.log("node is ");
+				//console.log(node);
+				score = waveMap[node[0]][node[1]]
+				//console.log("score is "+score);
+				for (neighbor_offset of neighbor_offsets){
+					//console.log("run over neighbor offsets");
+					neighbor_x = node[0]*1+neighbor_offset[0]*1;
+					neighbor_y = node[1]*1+neighbor_offset[1]*1;
+					if (neighbor_x < 0 ||
+						neighbor_y < 0 ||
+						neighbor_x >= config.sizeMapX ||
+						neighbor_y >= config.sizeMapY){
+						//console.log("out of borders - we can not move here "+neighbor_x+";"+neighbor_y);
+						continue
+					}
+					if (pfmap[neighbor_x][neighbor_y] == 0){
+						//console.log("not travelable - we can not move here "+neighbor_x+";"+neighbor_y);
+						continue
+					}
+					if (pfmap[neighbor_x][neighbor_y] == 1){
+						//console.log("travelable - we could move there " + neighbor_x + ";" + neighbor_y);
+						if (neighbor_x == target[0] && neighbor_y == target[1]) {
+							console.log("we found the target!");
+							waveMap[neighbor_x][neighbor_y] = score*1 + 1;
+							continue
+						} else {
+							if (waveMap[neighbor_x][neighbor_y] == 0){
+								//console.log("can move here "+neighbor_x+";"+neighbor_y);
+								node_list.push([neighbor_x, neighbor_y]);
+								waveMap[neighbor_x][neighbor_y] = score*1 + 1;
+								continue
+							} else {
+								//console.log("we already have been here " + neighbor_x + ";" + neighbor_y);
+								continue
+							}
+						}
+					}
+				}
+			}
+			console.log("---the waveMap----");
+			console.log(waveMap);
+			document.getElementById("outTable").innerHTML="";
+			for (j = 0; j < config.sizeMapY; j++) {
+				for (i = 0; i < config.sizeMapX; i++) {
+					
+					//console.log("target coord is "+target[0]+" "+target[1]);
+					if (waveMap[i][j] < 10) {
+						prVal = "0"+waveMap[i][j]
+					} else {
+						prVal = waveMap[i][j]
+					}
+					if (i===target[0] && j===target[1]) {
+						prVal = "<b>"+prVal+"</b>";
+					}
+					document.getElementById("outTable").innerHTML+=prVal;
+					document.getElementById("outTable").innerHTML+=" | ";
+				}
+				document.getElementById("outTable").innerHTML+="</br>";
+			}
+			return waveMap;
+		},
 		genTrack : function () {
 			target[0] = game.blackmarketLoc[0]
 			target[1] = game.blackmarketLoc[1]
@@ -175,7 +281,7 @@
 			console.log("prepared map is");
 			console.log(preparedMap);
 			return preparedMap;
-		}
+		},
 	}
 </script>
 </html>
